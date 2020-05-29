@@ -47,7 +47,7 @@ def train(seed: int,
 
     logger = start_logging(log_dir, debug)
 
-    ctx = [mx.gpu(i) for i in gpu_ids]
+    ctx = [mx.gpu(i) for i in gpu_ids if i < mx.context.num_gpus()]
 
     logger.info(
         'Starting training with args:\nseed: {}\ngpu_ids: {}\nval_fraction: {}\nn_workers: {}\nn_epochs: {}\nn_batch: {}\n'.format(

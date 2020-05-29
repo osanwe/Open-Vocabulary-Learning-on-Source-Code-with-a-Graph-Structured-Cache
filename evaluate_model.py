@@ -33,7 +33,7 @@ def evaluate_model(seed: int,
 
     logger = start_logging(log_dir)
 
-    ctx = [mx.gpu(i) for i in gpu_ids]
+    ctx = [mx.gpu(i) for i in gpu_ids if i < mx.context.num_gpus()]
 
     model = models.__dict__[model_name].load_model(model_filepath)
     model.load_parameters(model_params_filepath, ctx=ctx)
