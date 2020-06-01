@@ -4,6 +4,8 @@ import os
 import shutil
 import unittest
 
+import mxnet as mx
+
 from data import FITBTask, VarNamingTask
 from experiments.utils import get_time
 from models import FITBClosedVocabGGNN, FITBClosedVocabDTNN, FITBClosedVocabRGCN, VarNamingClosedVocabGGNN, \
@@ -53,6 +55,7 @@ class TestTrainModelOnFITBTask(unittest.TestCase):
                                   data_encoder='new',
                                   data_encoder_kwargs=dict(),
                                   instance_to_datapoints_kwargs=dict(max_nodes_per_graph=100))
+        n_batch = 256
         train(seed=1523,
               log_dir=self.log_dir,
               gpu_ids=(0, 1, 2, 3),
@@ -74,7 +77,7 @@ class TestTrainModelOnFITBTask(unittest.TestCase):
               n_workers=4,
               n_epochs=2,
               evaluation_metrics=('evaluate_FITB_accuracy',),
-              n_batch=256,
+              n_batch=n_batch if mx.context.num_gpus() >= 4 else n_batch // 4 * mx.context.num_gpus(),
               debug=True)
 
     def test_train_model_on_task_with_FITBCharCNNGGNN(self):
@@ -88,6 +91,7 @@ class TestTrainModelOnFITBTask(unittest.TestCase):
                                   data_encoder='new',
                                   data_encoder_kwargs=dict(max_name_encoding_length=10),
                                   instance_to_datapoints_kwargs=dict(max_nodes_per_graph=100))
+        n_batch = 256
         train(seed=1523,
               log_dir=self.log_dir,
               gpu_ids=(0, 1, 2, 3),
@@ -109,7 +113,7 @@ class TestTrainModelOnFITBTask(unittest.TestCase):
               n_workers=4,
               n_epochs=2,
               evaluation_metrics=('evaluate_FITB_accuracy',),
-              n_batch=256,
+              n_batch=n_batch if mx.context.num_gpus() >= 4 else n_batch // 4 * mx.context.num_gpus(),
               debug=True)
 
     def test_train_model_on_task_with_FITBGSCVocabGGNN(self):
@@ -123,6 +127,7 @@ class TestTrainModelOnFITBTask(unittest.TestCase):
                                   data_encoder='new',
                                   data_encoder_kwargs=dict(max_name_encoding_length=10),
                                   instance_to_datapoints_kwargs=dict(max_nodes_per_graph=100))
+        n_batch = 256
         train(seed=1523,
               log_dir=self.log_dir,
               gpu_ids=(0, 1, 2, 3),
@@ -144,7 +149,7 @@ class TestTrainModelOnFITBTask(unittest.TestCase):
               n_workers=4,
               n_epochs=2,
               evaluation_metrics=('evaluate_FITB_accuracy',),
-              n_batch=256,
+              n_batch=n_batch if mx.context.num_gpus() >= 4 else n_batch // 4 * mx.context.num_gpus(),
               debug=True)
 
 
@@ -181,6 +186,7 @@ class TestTrainModelOnVarNamingTask(unittest.TestCase):
                                   data_encoder='new',
                                   data_encoder_kwargs=dict(),
                                   instance_to_datapoints_kwargs=dict(max_nodes_per_graph=100))
+        n_batch = 256
         train(seed=1523,
               log_dir=self.log_dir,
               gpu_ids=(0, 1, 2, 3),
@@ -203,7 +209,7 @@ class TestTrainModelOnVarNamingTask(unittest.TestCase):
               n_workers=4,
               n_epochs=2,
               evaluation_metrics=('evaluate_full_name_accuracy',),
-              n_batch=256,
+              n_batch=n_batch if mx.context.num_gpus() >= 4 else n_batch // 4 * mx.context.num_gpus(),
               debug=True)
 
 
@@ -245,6 +251,7 @@ class TestTrainModelOnFITBTaskMemorizeMinibatch(unittest.TestCase):
         for f in [os.path.join(self.output_dataset_dir, f) for f in os.listdir(self.output_dataset_dir) if
                   'DataEncoder' not in f][self.minibatch_size:]:
             os.remove(f)
+        n_batch = (len(os.listdir(self.output_dataset_dir)) - 1) * 10
         _, accuracy = train(seed=1525,
                             log_dir=self.log_dir,
                             gpu_ids=(0, 1),
@@ -267,9 +274,9 @@ class TestTrainModelOnFITBTaskMemorizeMinibatch(unittest.TestCase):
                             n_workers=4,
                             n_epochs=7,
                             evaluation_metrics=('evaluate_FITB_accuracy',),
-                            n_batch=(len(os.listdir(self.output_dataset_dir)) - 1) * 10,
+                            n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2,
                             test=True)
-        self.assertGreaterEqual(accuracy, 0.8)
+        self.assertGreaterEqual(accuracy, 0.8 if mx.context.num_gpus() >= 2 else 0.16)
 
     def test_train_model_on_task_memorize_minibatch_with_FITBClosedVocabDTNN(self):
         preprocess_task_for_model(234,
@@ -285,6 +292,7 @@ class TestTrainModelOnFITBTaskMemorizeMinibatch(unittest.TestCase):
         for f in [os.path.join(self.output_dataset_dir, f) for f in os.listdir(self.output_dataset_dir) if
                   'DataEncoder' not in f][self.minibatch_size:]:
             os.remove(f)
+        n_batch = (len(os.listdir(self.output_dataset_dir)) - 1) * 10
         _, accuracy = train(seed=1525,
                             log_dir=self.log_dir,
                             gpu_ids=(0, 1),
@@ -307,9 +315,9 @@ class TestTrainModelOnFITBTaskMemorizeMinibatch(unittest.TestCase):
                             n_workers=4,
                             n_epochs=7,
                             evaluation_metrics=('evaluate_FITB_accuracy',),
-                            n_batch=(len(os.listdir(self.output_dataset_dir)) - 1) * 10,
+                            n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2,
                             test=True)
-        self.assertGreaterEqual(accuracy, 0.8)
+        self.assertGreaterEqual(accuracy, 0.8 if mx.context.num_gpus() >= 2 else 0.16)
 
     def test_train_model_on_task_memorize_minibatch_with_FITBClosedVocabRGCN(self):
         preprocess_task_for_model(234,
@@ -325,6 +333,7 @@ class TestTrainModelOnFITBTaskMemorizeMinibatch(unittest.TestCase):
         for f in [os.path.join(self.output_dataset_dir, f) for f in os.listdir(self.output_dataset_dir) if
                   'DataEncoder' not in f][self.minibatch_size:]:
             os.remove(f)
+        n_batch = (len(os.listdir(self.output_dataset_dir)) - 1) * 10
         _, accuracy = train(seed=1525,
                             log_dir=self.log_dir,
                             gpu_ids=(0, 1),
@@ -347,9 +356,9 @@ class TestTrainModelOnFITBTaskMemorizeMinibatch(unittest.TestCase):
                             n_workers=4,
                             n_epochs=4,
                             evaluation_metrics=('evaluate_FITB_accuracy',),
-                            n_batch=(len(os.listdir(self.output_dataset_dir)) - 1) * 10,
+                            n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2,
                             test=True)
-        self.assertGreaterEqual(accuracy, 0.8)
+        self.assertGreaterEqual(accuracy, 0.8 if mx.context.num_gpus() >= 2 else 0.16)
 
 
 class TestTrainModelOnVarNamingTaskMemorizeMinibatch(unittest.TestCase):
@@ -390,6 +399,7 @@ class TestTrainModelOnVarNamingTaskMemorizeMinibatch(unittest.TestCase):
         for f in [os.path.join(self.output_dataset_dir, f) for f in os.listdir(self.output_dataset_dir) if
                   'DataEncoder' not in f][self.minibatch_size:]:
             os.remove(f)
+        n_batch = (len(os.listdir(self.output_dataset_dir)) - 1) * 10
         _, wordwise_accuracy = train(seed=1525,
                                      log_dir=self.log_dir,
                                      gpu_ids=(0, 1),
@@ -413,9 +423,9 @@ class TestTrainModelOnVarNamingTaskMemorizeMinibatch(unittest.TestCase):
                                      n_workers=4,
                                      n_epochs=10,
                                      evaluation_metrics=('evaluate_full_name_accuracy',),
-                                     n_batch=(len(os.listdir(self.output_dataset_dir)) - 1) * 10,
+                                     n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2,
                                      test=True)
-        self.assertGreaterEqual(wordwise_accuracy, 0.9)
+        self.assertGreaterEqual(wordwise_accuracy, 0.9 if mx.context.num_gpus() >= 2 else 0.18)
 
     def test_train_model_on_task_memorize_minibatch_with_VarNamingCharCNNGGNN(self):
         preprocess_task_for_model(234,
@@ -431,6 +441,7 @@ class TestTrainModelOnVarNamingTaskMemorizeMinibatch(unittest.TestCase):
         for f in [os.path.join(self.output_dataset_dir, f) for f in os.listdir(self.output_dataset_dir) if
                   'DataEncoder' not in f][self.minibatch_size:]:
             os.remove(f)
+        n_batch = (len(os.listdir(self.output_dataset_dir)) - 1) * 10
         _, wordwise_accuracy = train(seed=1525,
                                      log_dir=self.log_dir,
                                      gpu_ids=(0, 1),
@@ -454,9 +465,9 @@ class TestTrainModelOnVarNamingTaskMemorizeMinibatch(unittest.TestCase):
                                      n_workers=4,
                                      n_epochs=10,
                                      evaluation_metrics=('evaluate_full_name_accuracy',),
-                                     n_batch=(len(os.listdir(self.output_dataset_dir)) - 1) * 10,
+                                     n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2,
                                      test=True)
-        self.assertGreaterEqual(wordwise_accuracy, 0.9)
+        self.assertGreaterEqual(wordwise_accuracy, 0.9 if mx.context.num_gpus() >= 2 else 0.18)
 
     def test_train_model_on_task_memorize_minibatch_with_VarNamingGSCVocabGGNN(self):
         preprocess_task_for_model(234,
@@ -472,6 +483,7 @@ class TestTrainModelOnVarNamingTaskMemorizeMinibatch(unittest.TestCase):
         for f in [os.path.join(self.output_dataset_dir, f) for f in os.listdir(self.output_dataset_dir) if
                   'DataEncoder' not in f][self.minibatch_size:]:
             os.remove(f)
+        n_batch = (len(os.listdir(self.output_dataset_dir)) - 1) * 10
         _, wordwise_accuracy = train(seed=1525,
                                      log_dir=self.log_dir,
                                      gpu_ids=(0, 1),
@@ -495,9 +507,9 @@ class TestTrainModelOnVarNamingTaskMemorizeMinibatch(unittest.TestCase):
                                      n_workers=4,
                                      n_epochs=7,
                                      evaluation_metrics=('evaluate_full_name_accuracy',),
-                                     n_batch=(len(os.listdir(self.output_dataset_dir)) - 1) * 10,
+                                     n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2,
                                      test=True)
-        self.assertGreaterEqual(wordwise_accuracy, 0.9)
+        self.assertGreaterEqual(wordwise_accuracy, 0.9 if mx.context.num_gpus() >= 2 else 0.18)
 
     def test_train_model_on_task_memorize_minibatch_no_subtoken_edges_with_VarNamingGSCVocabGGNN(self):
         preprocess_task_for_model(234,
@@ -514,6 +526,7 @@ class TestTrainModelOnVarNamingTaskMemorizeMinibatch(unittest.TestCase):
         for f in [os.path.join(self.output_dataset_dir, f) for f in os.listdir(self.output_dataset_dir) if
                   'DataEncoder' not in f][self.minibatch_size:]:
             os.remove(f)
+        n_batch = (len(os.listdir(self.output_dataset_dir)) - 1) * 10
         _, wordwise_accuracy = train(seed=1525,
                                      log_dir=self.log_dir,
                                      gpu_ids=(0, 1),
@@ -537,9 +550,9 @@ class TestTrainModelOnVarNamingTaskMemorizeMinibatch(unittest.TestCase):
                                      n_workers=4,
                                      n_epochs=10,
                                      evaluation_metrics=('evaluate_full_name_accuracy',),
-                                     n_batch=(len(os.listdir(self.output_dataset_dir)) - 1) * 10,
+                                     n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2,
                                      test=True)
-        self.assertGreaterEqual(wordwise_accuracy, 0.9)
+        self.assertGreaterEqual(wordwise_accuracy, 0.9 if mx.context.num_gpus() >= 2 else 0.18)
 
     def test_train_model_on_task_memorize_minibatch_edit_distance_with_VarNamingGSCVocabGGNN(self):
         preprocess_task_for_model(234,
@@ -555,6 +568,7 @@ class TestTrainModelOnVarNamingTaskMemorizeMinibatch(unittest.TestCase):
         for f in [os.path.join(self.output_dataset_dir, f) for f in os.listdir(self.output_dataset_dir) if
                   'DataEncoder' not in f][self.minibatch_size:]:
             os.remove(f)
+        n_batch = (len(os.listdir(self.output_dataset_dir)) - 1) * 10
         _, wordwise_accuracy = train(seed=1525,
                                      log_dir=self.log_dir,
                                      gpu_ids=(0, 1),
@@ -578,6 +592,6 @@ class TestTrainModelOnVarNamingTaskMemorizeMinibatch(unittest.TestCase):
                                      n_workers=4,
                                      n_epochs=9,
                                      evaluation_metrics=('evaluate_edit_distance',),
-                                     n_batch=(len(os.listdir(self.output_dataset_dir)) - 1) * 10,
+                                     n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2,
                                      test=True)
-        self.assertLessEqual(wordwise_accuracy, 2)
+        self.assertLessEqual(wordwise_accuracy, 2 if mx.context.num_gpus() >= 2 else 4)

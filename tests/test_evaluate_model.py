@@ -3,6 +3,8 @@ import os
 import shutil
 import unittest
 
+import mxnet as mx
+
 from data.Tasks import FITBTask, VarNamingTask
 from evaluate_model import evaluate_model
 from experiments.utils import get_time
@@ -68,6 +70,7 @@ class TestEvaluateModel(unittest.TestCase):
                                   n_jobs=30,
                                   excluded_edge_types=frozenset(),
                                   data_encoder=data_encoder)
+        n_batch = 63
         train(seed=1523,
               log_dir=self.train_log_dir,
               gpu_ids=(0, 1, 2),
@@ -90,9 +93,10 @@ class TestEvaluateModel(unittest.TestCase):
               n_workers=4,
               n_epochs=2,
               evaluation_metrics=('evaluate_FITB_accuracy',),
-              n_batch=63)
+              n_batch=n_batch if mx.context.num_gpus() >= 3 else n_batch // 3 * mx.context.num_gpus())
         model_checkpoint_path = os.path.join(self.train_log_dir, 'model.pkl')
         model_params_path = os.path.join(self.train_log_dir, 'best.params')
+        n_batch = 68
         evaluate_model(seed=619,
                        log_dir=self.test_log_dir,
                        gpu_ids=(0, 1),
@@ -101,7 +105,7 @@ class TestEvaluateModel(unittest.TestCase):
                        model_params_filepath=model_params_path,
                        test_data_directory=self.test_output_dataset_dir,
                        n_workers=5,
-                       n_batch=68,
+                       n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2,
                        evaluation_metrics=('evaluate_FITB_accuracy',))
 
     def test_evaluate_gives_the_same_results_as_in_training_loop_with_FITBClosedVocabGGNN(self):
@@ -124,6 +128,7 @@ class TestEvaluateModel(unittest.TestCase):
                                   n_jobs=30,
                                   excluded_edge_types=frozenset(),
                                   data_encoder=data_encoder)
+        n_batch = 63
         val_data, train_FITB_eval_accuracy = train(seed=1523,
                                                    log_dir=self.train_log_dir,
                                                    gpu_ids=(0, 1, 2),
@@ -146,12 +151,13 @@ class TestEvaluateModel(unittest.TestCase):
                                                    n_workers=4,
                                                    n_epochs=2,
                                                    evaluation_metrics=('evaluate_FITB_accuracy',),
-                                                   n_batch=63)
+                                                   n_batch=63 if mx.context.num_gpus() >= 3 else n_batch // 3 * mx.context.num_gpus())
         for f in [os.path.join(self.train_output_dataset_dir, f) for f in os.listdir(self.train_output_dataset_dir)]:
             if f not in val_data and f != os.path.join(self.train_output_dataset_dir, 'FITBClosedVocabDataEncoder.pkl'):
                 os.remove(f)
         model_checkpoint_path = os.path.join(self.train_log_dir, 'model.pkl')
         model_params_path = os.path.join(self.train_log_dir, 'model_checkpoint_epoch_1.params')
+        n_batch = 68
         test_FITB_eval_accuracy = evaluate_model(seed=619,
                                                  log_dir=self.test_log_dir,
                                                  gpu_ids=(0, 1),
@@ -160,10 +166,11 @@ class TestEvaluateModel(unittest.TestCase):
                                                  model_params_filepath=model_params_path,
                                                  test_data_directory=self.train_output_dataset_dir,
                                                  n_workers=5,
-                                                 n_batch=68,
+                                                 n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2,
                                                  evaluation_metrics=('evaluate_FITB_accuracy',))
         self.assertEqual(train_FITB_eval_accuracy, test_FITB_eval_accuracy)
         model_params_path = os.path.join(self.train_log_dir, 'best.params')
+        n_batch = 55
         test_FITB_eval_accuracy = evaluate_model(seed=214,
                                                  log_dir=self.test_log_dir,
                                                  gpu_ids=(0,),
@@ -172,7 +179,7 @@ class TestEvaluateModel(unittest.TestCase):
                                                  model_params_filepath=model_params_path,
                                                  test_data_directory=self.train_output_dataset_dir,
                                                  n_workers=5,
-                                                 n_batch=55,
+                                                 n_batch=n_batch,
                                                  evaluation_metrics=('evaluate_FITB_accuracy',))
         self.assertEqual(train_FITB_eval_accuracy, test_FITB_eval_accuracy)
 
@@ -197,6 +204,7 @@ class TestEvaluateModel(unittest.TestCase):
                                   excluded_edge_types=frozenset(),
                                   data_encoder=data_encoder)
 
+        n_batch = 63
         train(seed=1523,
               log_dir=self.train_log_dir,
               gpu_ids=(0, 1),
@@ -218,9 +226,10 @@ class TestEvaluateModel(unittest.TestCase):
               n_workers=4,
               n_epochs=2,
               evaluation_metrics=('evaluate_FITB_accuracy',),
-              n_batch=63)
+              n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2)
         model_checkpoint_path = os.path.join(self.train_log_dir, 'model.pkl')
         model_params_path = os.path.join(self.train_log_dir, 'model_checkpoint_epoch_1.params')
+        n_batch = 63
         evaluate_model(seed=619,
                        log_dir=self.test_log_dir,
                        gpu_ids=(0, 1),
@@ -229,7 +238,7 @@ class TestEvaluateModel(unittest.TestCase):
                        model_params_filepath=model_params_path,
                        test_data_directory=self.test_output_dataset_dir,
                        n_workers=4,
-                       n_batch=63,
+                       n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2,
                        evaluation_metrics=('evaluate_FITB_accuracy',))
 
 
@@ -290,6 +299,7 @@ class TestEvaluateModelVarNaming(unittest.TestCase):
                                   n_jobs=30,
                                   excluded_edge_types=frozenset(),
                                   data_encoder=data_encoder)
+        n_batch = 63
         train(seed=1523,
               log_dir=self.train_log_dir,
               gpu_ids=(0, 1, 2),
@@ -313,9 +323,10 @@ class TestEvaluateModelVarNaming(unittest.TestCase):
               n_workers=4,
               n_epochs=2,
               evaluation_metrics=('evaluate_full_name_accuracy',),
-              n_batch=63)
+              n_batch=n_batch if mx.context.num_gpus() >= 3 else n_batch // 3 * mx.context.num_gpus())
         model_checkpoint_path = os.path.join(self.train_log_dir, 'model.pkl')
         model_params_path = os.path.join(self.train_log_dir, 'best.params')
+        n_batch = 68
         evaluate_model(seed=619,
                        log_dir=self.test_log_dir,
                        gpu_ids=(0, 1),
@@ -324,7 +335,7 @@ class TestEvaluateModelVarNaming(unittest.TestCase):
                        model_params_filepath=model_params_path,
                        test_data_directory=self.test_output_dataset_dir,
                        n_workers=5,
-                       n_batch=68,
+                       n_batch=n_batch if mx.context.num_gpus() >= 2 else n_batch // 2,
                        evaluation_metrics=(
                            'evaluate_full_name_accuracy',
                            'evaluate_subtokenwise_accuracy',
