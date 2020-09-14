@@ -30,7 +30,7 @@ mkdir temp
 
 num_repos=$(ls ./repositories | wc -l)
 echo $num_repos total repos
-echo $(find ./repositories -type f -name "*.gml" | wc -l) total files
+echo $(find ./repositories -type f -name "*.graphml" | wc -l) total files
 
 unseen_size=$((num_repos * 20 / 100))
 echo Separating $unseen_size unseen repos
@@ -43,14 +43,14 @@ echo Repos split
 
 # Split files into train and test
 mkdir unseen_repos/test_graphs
-find ./unseen_repos/ -type f -name "*.gml" | xargs -I{} mv {} ./unseen_repos/test_graphs
+find ./unseen_repos/ -type f -name "*.graphml" | xargs -I{} mv {} ./unseen_repos/test_graphs
 echo $(ls -d -1 ./unseen_repos/test_graphs/* | wc -l) total unseen test graphs
 
 mkdir seen_repos/train_graphs
 mkdir seen_repos/test_graphs
 mkdir seen_repos/temp
 
-seen_files=$(find ./seen_repos/ -type f -name "*.gml")
+seen_files=$(find ./seen_repos/ -type f -name "*.graphml")
 mv $seen_files ./seen_repos/temp
 
 num_files=$(ls ./seen_repos/temp | wc -l)
